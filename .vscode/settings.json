@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "driverlib.h": "c",
+        "compare": "cpp",
+        "complex": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "numbers": "c"
+    }
+}
