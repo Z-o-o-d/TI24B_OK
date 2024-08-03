@@ -240,11 +240,11 @@ char Hzk[][32]={
 #define X_WIDTH     128
 #define Y_WIDTH     64
 
-#define OLED_SCLK_Clr() P6OUT&=~BIT3  //CLK
-#define OLED_SCLK_Set() P6OUT|=BIT3
+#define OLED_SCLK_Clr() P8OUT&=~BIT2  //CLK
+#define OLED_SCLK_Set() P8OUT|=BIT2
 
-#define OLED_SDIN_Clr() P6OUT&=~BIT4  //DIN
-#define OLED_SDIN_Set() P6OUT|=BIT4
+#define OLED_SDIN_Clr() P8OUT&=~BIT1  //DIN
+#define OLED_SDIN_Set() P8OUT|=BIT1
 
 #define OLED_CMD  0
 #define OLED_DATA 1
@@ -493,15 +493,17 @@ void OLED_ShowString(u8 x,u8 y,u8 *chr,u8 Char_Size)
 
 void OLED_Init(void)
 {
-    P6DIR |= BIT3+BIT4;
+    P8DIR |= BIT1+BIT2;
     Delay_1ms(200);
     OLED_WR_Byte(0xAE,OLED_CMD);//--display off
     OLED_WR_Byte(0x00,OLED_CMD);//---set low column address
     OLED_WR_Byte(0x10,OLED_CMD);//---set high column address
     OLED_WR_Byte(0x40,OLED_CMD);//--set start line address
     OLED_WR_Byte(0xB0,OLED_CMD);//--set page address
+
     OLED_WR_Byte(0x81,OLED_CMD); // contract control
-    OLED_WR_Byte(0xFF,OLED_CMD);//--128
+    OLED_WR_Byte(0x00,OLED_CMD);//--128
+
     OLED_WR_Byte(0xA1,OLED_CMD);//set segment remap
     OLED_WR_Byte(0xA6,OLED_CMD);//--normal / reverse
     OLED_WR_Byte(0xA8,OLED_CMD);//--set multiplex ratio(1 to 64)
@@ -732,7 +734,7 @@ void Timer_A_PWM_Init(void)
 {  
     Timer_A_outputPWMParam htim = {0};
     //P1.2复用输出
-    GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P1, GPIO_PIN2);
+//    GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P1, GPIO_PIN2);
     //时钟源选为SMCLK = 25MHz
     htim.clockSource = TIMER_A_CLOCKSOURCE_SMCLK;
     //分频系数设为10
@@ -752,7 +754,7 @@ void Timer_A_PWM_Stop(void)
 {
     Timer_A_outputPWMParam htim = {0};
     //P1.2复用输出
-    GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P1, GPIO_PIN2);
+//    GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P1, GPIO_PIN2);
     //时钟源选为SMCLK = 25MHz
     htim.clockSource = TIMER_A_CLOCKSOURCE_SMCLK;
     //分频系数设为40
@@ -851,6 +853,7 @@ void rms(){
     for (i = 0; i < SAMP_Dot; i++) {
         V_AC_component[i] = ADC1_Data_V[i] - V_DC_component;
         V_sum_squares += V_AC_component[i] * V_AC_component[i];
+//        UART_printf(USCI_A1_BASE, "ADC1: %d  \r\n",ADC1_Data_V[i]);
     }
 
     // 计算交流电压的有效值
@@ -871,11 +874,12 @@ void rms(){
     for (i = 0; i < SAMP_Dot; i++) {
         I_AC_component[i] = ADC2_Data_I[i] - I_DC_component;
         I_sum_squares += I_AC_component[i] * I_AC_component[i];
+//        UART_printf(USCI_A1_BASE, "ADC2: %d  \r\n",ADC2_Data_I[i]);
     }
 
     // 计算交流电流的有效值
-//    if(I_switch)
-    if(0){
+    if(I_switch){
+//    if(0){
         I_rms = 0.0081*sqrt(I_sum_squares / SAMP_Dot)-0.024;
         // 计算有功功率
          for (i = 0; i < SAMP_Dot; i++) {
@@ -918,9 +922,9 @@ void rms(){
     sprintf(&temp_show,"V :%011.6f",V_rms);
     OLED_ShowString(0, 0 , temp_show, 16);
     if(I_switch)
-    sprintf(&temp_show,"IL:   %.6f",I_rms);
-    else
     sprintf(&temp_show,"IS:   %.6f",I_rms);
+    else
+    sprintf(&temp_show,"IL:   %.6f",I_rms);
     OLED_ShowString(0, 2, temp_show, 16);
     sprintf(&temp_show,"P :%011.6f",P_avg);
     OLED_ShowString(0, 4, temp_show, 16);
@@ -984,7 +988,7 @@ if (first_dft)
     //电流谐波系数
     for(count=2,I_THD=0;count<25;count++){
         I_THD+=ADC2_Iref[count]*ADC2_Iref[count];
-        UART_printf(USCI_A1_BASE,"I_THD%d : %f  ",count,ADC2_Iref[count]);
+//        UART_printf(USCI_A1_BASE,"I_THD%d : %f  ",count,ADC2_Iref[count]);
     }
     I_THD=sqrtf(I_THD)/ADC2_Iref[1]*1.05;
     UART_printf(USCI_A1_BASE,"I_THD : %f  \r\n\r\n",I_THD);
